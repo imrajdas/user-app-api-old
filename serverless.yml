@@ -3,7 +3,6 @@ service: user-api # NOTE: update this with your service name
 #Use serverless-webpack plugin to transpile ES6/ES7
 plugins:
   - serverless-webpack
-  - serverless-domain-manager
 
 
 # Enable auto-packing of external modules
@@ -15,7 +14,6 @@ provider:
   runtime: nodejs8.10
   stage: ${opt:stage, "prod"}
   region: eu-west-1
-  deploymentBucket: api.user${opt:stage, "prod"}
   environment:
     SERVICE_NAME: ${self:service}
 
