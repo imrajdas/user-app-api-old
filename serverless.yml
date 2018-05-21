@@ -1,71 +1,91 @@
-service: notes-app-api
+service: user-api # NOTE: update this with your service name
 
-# Use serverless-webpack plugin to transpile ES6/ES7
+#Use serverless-webpack plugin to transpile ES6/ES7
 plugins:
   - serverless-webpack
+  - serverless-domain-manager
+
 
 # Enable auto-packing of external modules
 custom:
   webpackIncludeModules: true
-
+# Provider 
 provider:
   name: aws
-  runtime: nodejs6.10
-  stage: prod
-  region: ap-south-1
+  runtime: nodejs8.10
+  stage: ${opt:stage, "prod"}
+  region: eu-west-1
+  deploymentBucket: api.user${opt:stage, "prod"}
+  environment:
+    SERVICE_NAME: ${self:service}
 
-  # 'iamRoleStatement' defines the permission policy for the Lambda function.
-  # In this case Lambda functions are granted with permissions to access DynamoDB.
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:us-east-1:*:*"
-
+# you can add statements to the Lambda function's IAM Role here
+iamRoleStatements:
+  - Effect: "Allow"
+    Action:
+      - dynamodb:DescribeTable
+      - dynamodb:Query
+      - dynamodb:Scan
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:DeleteItem
+    Resource: arn:aws:dynamodb:eu-west-1:*:table/user_${opt:stage, "prod"}
+# Function
 functions:
   create:
-    handler: create.main
+    handler: user_create.main
+    name: ${self:provider.stage}-user_create
     events:
       - http:
-          path: notes
+          path: create
           method: post
           cors: true
-          authorizer: aws_iam
-  get:
-    handler: get.main
+          # authorizer: aws_iam
+  view:
+    handler: user_view.main
+    name: ${self:provider.stage}-user_view
     events:
       - http:
-          path: notes/{id}
+          path: view/{id}
           method: get
           cors: true
-          authorizer: aws_iam
-  list:
-    handler: list.main
-    events:
-      - http:
-          path: notes
-          method: get
-          cors: true
-          authorizer: aws_iam
+          # authorizer: aws_iam
+
   update:
-     handler: update.main
-     events:
-       - http:
-           path: notes/{id}
-           method: put
-           cors: true
-           authorizer: aws_iam
-  delete:
-    handler: delete.main
+    handler: user_update.main
+    name: ${self:provider.stage}-user_update
     events:
       - http:
-          path: notes/{id}
+          path: update/{id}
+          method: post
+          cors: true
+          # authorizer: aws_iam
+
+  delete:
+    handler: user_delete.main
+    name: ${self:provider.stage}-user_delete
+    events:
+      - http:
+          path: delete/{id}
           method: delete
           cors: true
-          authorizer: aws_iam
+          # authorizer: aws_iam
+# Resources
+resources:
+  Resources:
+    userTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: user_${opt:stage, "prod"}
+        AttributeDefinitions:
+          - AttributeName: userid
+            AttributeType: N
+        KeySchema:
+          - AttributeName: userid
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1  
+        SSESpecification:
+          SSEEnabled: true

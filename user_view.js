@@ -1,7 +1,7 @@
 import aws from "aws-sdk";
 import { success, failure } from "./libs/response-lib";
 const cred = require('./libs/cred.json') // credentials files
-const documentClient = new AWS.DynamoDB.DocumentClient();
+const documentClient = new aws.DynamoDB.DocumentClient();
 
 // main function
 export async function main(event, context, callback) {
